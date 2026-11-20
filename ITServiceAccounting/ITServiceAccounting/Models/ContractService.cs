@@ -1,21 +1,39 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITServiceAccounting.Models
 {
-    // Класс-связка многие-ко-многим
     public class ContractService
     {
-        public Guid Id { get; private set; }
-        public Contract Contract { get; private set; }
-        public Service Service { get; private set; }
+        [Key]
+        [Column("id")]
+        public Guid Id { get; internal set; }
+
+        [Required]
+        [Column("contract_id")]
+        public Guid ContractId { get; internal set; }
+
+        [ForeignKey(nameof(ContractId))]
+        public Contract Contract { get; internal set; }
+
+        [Required]
+        [Column("service_id")]
+        public Guid ServiceId { get; internal set; }
+
+        [ForeignKey(nameof(ServiceId))]
+        public Service Service { get; internal set; }
+
+        // Пустой конструктор для EF Core
+        protected ContractService() { }
 
         private ContractService(Guid id, Contract contract, Service service)
         {
             Id = id;
             Contract = contract;
+            ContractId = contract.Id;
             Service = service;
+            ServiceId = service.Id;
         }
 
         public static ContractService Create(Contract contract, Service service)

@@ -1,15 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITServiceAccounting.Models
 {
-    // Исполнитель
     public class Executor
     {
-        public Guid Id { get; private set; }
-        public string FullName { get; private set; }
-        public string Position { get; private set; }
+        [Key]
+        [Column("id")]
+        public Guid Id { get; internal set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("full_name")]
+        public string FullName { get; internal set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("position")]
+        public string Position { get; internal set; }
+
+        // Навигационное свойство для связи 1:N с договорами
+        public ICollection<Contract> Contracts { get; internal set; } = new List<Contract>();
+
+        // Пустой конструктор для EF Core
+        protected Executor() { }
 
         private Executor(Guid id, string fullName, string position)
         {
@@ -18,7 +34,6 @@ namespace ITServiceAccounting.Models
             Position = position;
         }
 
-        // Cтатический метод создания объекта
         public static Executor Create(string fullName, string position)
         {
             if (string.IsNullOrWhiteSpace(fullName))
