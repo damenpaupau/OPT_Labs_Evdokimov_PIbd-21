@@ -1,9 +1,9 @@
 ﻿using Autofac;
 using ITServiceAccounting.interfaces;
 using ITServiceAccounting.Repositories;
+using Microsoft.Extensions.Configuration;
+using Serilog;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ITServiceAccounting
 {
@@ -11,26 +11,45 @@ namespace ITServiceAccounting
     {
         public static IContainer Configure()
         {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
+
             var builder = new ContainerBuilder();
 
-            // Регистрируем репозитории
+            // Логгер регистрируем как SingleInstance
+            builder.RegisterInstance(Log.Logger)
+                   .As<ILogger>()
+                   .SingleInstance();
 
-            builder.RegisterType<OrganizationRepositoryStub>()
+            // DataContext — отдельный экземпляр при каждом разрешении зависимости
+            builder.RegisterType<DataContext>()
+                   .AsSelf()
+                   .InstancePerDependency();
+
+            // Репозитории на базе EF Core
+            builder.RegisterType<OrganizationRepository>()
                    .As<IOrganizationRepository>()
-                   .SingleInstance();
+                   .InstancePerDependency();
 
-            builder.RegisterType<ExecutorRepositoryStub>()
+            builder.RegisterType<ExecutorRepository>()
                    .As<IExecutorRepository>()
-                   .SingleInstance();
+                   .InstancePerDependency();
 
-            builder.RegisterType<ServiceRepositoryStub>()
+            builder.RegisterType<ServiceRepository>()
                    .As<IServiceRepository>()
-                   .SingleInstance();
+                   .InstancePerDependency();
 
-            builder.RegisterType<ContractRepositoryStub>()
+            builder.RegisterType<ContractRepository>()
                    .As<IContractRepository>()
-                   .SingleInstance();
+                   .InstancePerDependency();
 
+            // Формы
             builder.RegisterType<MainForm>();
 
             return builder.Build();

@@ -1,28 +1,52 @@
 ﻿using ITServiceAccounting.Enums;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITServiceAccounting.Models
 {
-    // Операция: Договор
     public class Contract
     {
-        public Guid Id { get; private set; }
-        public decimal TotalAmount { get; private set; }
+        [Key]
+        [Column("id")]
+        public Guid Id { get; internal set; }
 
-        // Сроки: дата начала
-        public DateTime StartDate { get; private set; }
+        [Required]
+        [Column("total_amount", TypeName = "numeric(18,2)")]
+        public decimal TotalAmount { get; internal set; }
 
-        // Сроки: дата окончания
-        public DateTime EndDate { get; private set; }
+        [Required]
+        [Column("start_date", TypeName = "date")]
+        public DateTime StartDate { get; internal set; }
 
-        // Ссылка на организацию
-        public Organization Client { get; private set; }
+        [Required]
+        [Column("end_date", TypeName = "date")]
+        public DateTime EndDate { get; internal set; }
 
-        // Ссылка на исполнителя
-        public Executor ResponsibleExecutor { get; private set; } 
-        public ContractStatus Status { get; private set; }
+        [Required]
+        [Column("status")]
+        public ContractStatus Status { get; internal set; }
+
+        [Required]
+        [Column("organization_id")]
+        public Guid OrganizationId { get; internal set; }
+
+        [ForeignKey(nameof(OrganizationId))]
+        public Organization Client { get; internal set; }
+
+        [Required]
+        [Column("executor_id")]
+        public Guid ExecutorId { get; internal set; }
+
+        [ForeignKey(nameof(ExecutorId))]
+        public Executor ResponsibleExecutor { get; internal set; }
+
+        // Навигационное свойство для связи N:M с услугами
+        public ICollection<ContractService> ContractServices { get; internal set; } = new List<ContractService>();
+
+        // Пустой конструктор для EF Core
+        protected Contract() { }
 
         private Contract(Guid id, decimal totalAmount, DateTime startDate, DateTime endDate,
                          Organization client, Executor executor, ContractStatus status)
@@ -32,7 +56,9 @@ namespace ITServiceAccounting.Models
             StartDate = startDate;
             EndDate = endDate;
             Client = client;
+            OrganizationId = client.Id;
             ResponsibleExecutor = executor;
+            ExecutorId = executor.Id;
             Status = status;
         }
 
@@ -50,6 +76,7 @@ namespace ITServiceAccounting.Models
 
             return new Contract(Guid.NewGuid(), totalAmount, startDate, endDate, client, executor, status);
         }
+
         public void ChangeStatus(ContractStatus newStatus)
         {
             Status = newStatus;

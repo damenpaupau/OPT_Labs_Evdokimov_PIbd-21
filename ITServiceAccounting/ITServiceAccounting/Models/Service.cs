@@ -1,17 +1,35 @@
 ﻿using ITServiceAccounting.Enums;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITServiceAccounting.Models
 {
-    // Справочник услуг
     public class Service
     {
-        public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public decimal BaseCost { get; private set; }
-        public ServiceCategory Category { get; private set; }
+        [Key]
+        [Column("id")]
+        public Guid Id { get; internal set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("name")]
+        public string Name { get; internal set; }
+
+        [Required]
+        [Column("base_cost", TypeName = "numeric(18,2)")]
+        public decimal BaseCost { get; internal set; }
+
+        [Required]
+        [Column("category")]
+        public ServiceCategory Category { get; internal set; }
+
+        // Навигационное свойство для связи N:M через промежуточную таблицу
+        public ICollection<ContractService> ContractServices { get; internal set; } = new List<ContractService>();
+
+        // Пустой конструктор для EF Core
+        protected Service() { }
 
         private Service(Guid id, string name, decimal baseCost, ServiceCategory category)
         {
@@ -27,7 +45,6 @@ namespace ITServiceAccounting.Models
             return new Service(Guid.NewGuid(), name, baseCost, category);
         }
 
-        // Метод обновления для формы редактирования справочника
         public void Update(string name, decimal baseCost, ServiceCategory category)
         {
             Validate(name, baseCost);

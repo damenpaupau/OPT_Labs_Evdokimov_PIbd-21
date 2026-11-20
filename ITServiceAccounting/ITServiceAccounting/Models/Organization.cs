@@ -1,16 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ITServiceAccounting.Models
 {
-    // Справочник организаций
     public class Organization
     {
-        public Guid Id { get; private set; }
-        public string Name { get; private set; }
-        public string Inn { get; private set; }
-        public string ContactPerson { get; private set; }
+        [Key]
+        [Column("id")]
+        public Guid Id { get; internal set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("name")]
+        public string Name { get; internal set; }
+
+        [Required]
+        [MaxLength(20)]
+        [Column("inn")]
+        public string Inn { get; internal set; }
+
+        [Required]
+        [MaxLength(255)]
+        [Column("contact_person")]
+        public string ContactPerson { get; internal set; }
+
+        // Навигационное свойство для связи 1:N с договорами
+        public ICollection<Contract> Contracts { get; internal set; } = new List<Contract>();
+
+        // Пустой конструктор для EF Core
+        protected Organization() { }
 
         private Organization(Guid id, string name, string inn, string contactPerson)
         {
@@ -26,7 +46,6 @@ namespace ITServiceAccounting.Models
             return new Organization(Guid.NewGuid(), name, inn, contactPerson);
         }
 
-        // Метод обновления для формы редактирования справочника
         public void Update(string name, string inn, string contactPerson)
         {
             Validate(name, inn, contactPerson);
