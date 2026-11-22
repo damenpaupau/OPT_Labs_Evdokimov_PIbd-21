@@ -1,5 +1,7 @@
 ﻿using ITServiceAccounting.interfaces;
 using ITServiceAccounting.Models;
+using ITServiceAccounting.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -49,7 +51,7 @@ namespace ITServiceAccounting
             if (editForm.ShowDialog() == DialogResult.OK)
             {
                 // Обновляем таблицу, если сохранение прошло успешно
-                UpdateGrid(); 
+                UpdateGrid();
             }
         }
 
@@ -81,8 +83,35 @@ namespace ITServiceAccounting
 
             if (result == DialogResult.Yes)
             {
-                _repository.Delete(selectedOrg.Id);
-                UpdateGrid();
+                try
+                {
+                    _repository.Delete(selectedOrg.Id);
+                    UpdateGrid();
+                }
+                catch (Exception ex)
+                {
+                    string details = ex.InnerException?.Message ?? ex.Message;
+
+                    if (details.Contains("23503") ||
+                        details.Contains("23001") ||
+                        details.Contains("foreign key", StringComparison.OrdinalIgnoreCase) ||
+                        details.Contains("внешнего ключа", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show(
+                            "Невозможно удалить организацию, так как на неё уже оформлены договоры.",
+                            "Ошибка удаления",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            $"Ошибка при удалении:\n{details}",
+                            "Ошибка",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
             }
         }
     }

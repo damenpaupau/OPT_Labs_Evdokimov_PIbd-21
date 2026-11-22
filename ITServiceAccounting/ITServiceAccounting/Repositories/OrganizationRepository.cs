@@ -1,5 +1,6 @@
 ﻿using ITServiceAccounting.interfaces;
 using ITServiceAccounting.Models;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -87,6 +88,7 @@ namespace ITServiceAccounting.Repositories
             }
             catch (Exception ex)
             {
+                _context.ChangeTracker.Clear();
                 _logger.Error(ex, "Ошибка при удалении организации: Id={Id}", id);
                 throw;
             }
