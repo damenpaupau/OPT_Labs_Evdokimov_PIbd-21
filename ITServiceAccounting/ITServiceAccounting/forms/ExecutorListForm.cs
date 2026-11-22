@@ -1,5 +1,7 @@
 ﻿using ITServiceAccounting.interfaces;
 using ITServiceAccounting.Models;
+using ITServiceAccounting.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,6 +9,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.EntityFrameworkCore;
 
 namespace ITServiceAccounting
 {
@@ -71,8 +74,35 @@ namespace ITServiceAccounting
 
             if (result == DialogResult.Yes)
             {
-                _repository.Delete(selectedExecutor.Id);
-                UpdateGrid();
+                try
+                {
+                    _repository.Delete(selectedExecutor.Id);
+                    UpdateGrid();
+                }
+                catch (Exception ex)
+                {
+                    string details = ex.InnerException?.Message ?? ex.Message;
+
+                    if (details.Contains("23503") ||
+                        details.Contains("23001") ||
+                        details.Contains("foreign key", StringComparison.OrdinalIgnoreCase) ||
+                        details.Contains("внешнего ключа", StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show(
+                            "Невозможно удалить исполнителя, так как он указан в одном или нескольких договорах.",
+                            "Ошибка удаления",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            $"Ошибка при удалении:\n{details}",
+                            "Ошибка",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
             }
         }
     }

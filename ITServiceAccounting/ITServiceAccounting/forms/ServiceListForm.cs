@@ -1,5 +1,7 @@
 ﻿using ITServiceAccounting.interfaces;
 using ITServiceAccounting.Models;
+using ITServiceAccounting.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,6 +9,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using Microsoft.EntityFrameworkCore;
 
 namespace ITServiceAccounting
 {
@@ -66,14 +69,35 @@ namespace ITServiceAccounting
 
 			var selectedService = (Service)dgvServices.CurrentRow.DataBoundItem;
 
-			var result = MessageBox.Show($"Удалить услугу {selectedService.Name}?",
-						  "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-			if (result == DialogResult.Yes)
+			try
 			{
 				_repository.Delete(selectedService.Id);
 				UpdateGrid();
 			}
+			catch (Exception ex)
+			{
+				string details = ex.InnerException?.Message ?? ex.Message;
+
+				if (details.Contains("23503") ||
+					details.Contains("23001") ||
+					details.Contains("foreign key", StringComparison.OrdinalIgnoreCase) ||
+					details.Contains("внешнего ключа", StringComparison.OrdinalIgnoreCase))
+				{
+					MessageBox.Show(
+						"Невозможно удалить услугу, так как она уже используется в одном или нескольких договорах.",
+						"Ошибка удаления",
+						MessageBoxButtons.OK,
+						MessageBoxIcon.Warning);
+				}
+				else
+				{
+					MessageBox.Show(
+						$"Ошибка при удалении:\n{details}",
+						"Ошибка",
+						MessageBoxButtons.OK,
+						MessageBoxIcon.Error);
+				}
+			}
 		}
 	}
-}
+ }

@@ -44,6 +44,11 @@ namespace ITServiceAccounting
             // Загружаем все доступные услуги в таблицу
             dgvServices.DataSource = _serviceRepo.GetAll();
 
+            if (dgvServices.Columns["ContractServices"] != null)
+            {
+                dgvServices.Columns["ContractServices"].Visible = false;
+            }
+
             // Добавляем чекбокс в DataGridView для выбора нескольких услуг
             var checkColumn = new DataGridViewCheckBoxColumn
             {
@@ -60,7 +65,12 @@ namespace ITServiceAccounting
             {
                 var client = (Organization)cmbClient.SelectedItem;
                 var executor = (Executor)cmbExecutor.SelectedItem;
-                var amount = decimal.Parse(txtTotalAmount.Text);
+
+                if (!decimal.TryParse(txtTotalAmount.Text, out var amount))
+                {
+                    MessageBox.Show("Введите корректную сумму договора.", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
                 if (client == null || executor == null)
                 {
@@ -68,22 +78,29 @@ namespace ITServiceAccounting
                     return;
                 }
 
-                // Создаем новый договор
-                var contract = Contract.Create(amount, dtpStartDate.Value, dtpEndDate.Value, client, executor, Enums.ContractStatus.Signed);
-                _contractRepo.Add(contract);
+                // Создаем объект договора
+                var contract = Contract.Create(
+                    amount,
+                    dtpStartDate.Value.Date,
+                    dtpEndDate.Value.Date,
+                    client,
+                    executor,
+                    Enums.ContractStatus.Signed);
 
-                // Обработка связи многие-ко-многим
+                // Сначала привязываем все отмеченные услуги к договору
                 foreach (DataGridViewRow row in dgvServices.Rows)
                 {
-                    // Если галочка стоит
                     bool isSelected = Convert.ToBoolean(row.Cells["IsSelected"].Value);
                     if (isSelected)
                     {
                         var service = (Service)row.DataBoundItem;
-                        // Создаем объект-связку
                         var link = ContractService.Create(contract, service);
+                        contract.ContractServices.Add(link);
                     }
                 }
+
+                // Сохраняем договор вместе со связанными услугами в одной транзакции
+                _contractRepo.Add(contract);
 
                 this.DialogResult = DialogResult.OK;
                 this.Close();

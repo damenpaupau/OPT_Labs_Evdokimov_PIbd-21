@@ -9,7 +9,18 @@ namespace ITServiceAccounting
         {
             ApplicationConfiguration.Initialize();
 
-            // Cоздаем и настраиваем контейнер
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (sender, args) =>
+            {
+                string message = args.Exception.InnerException?.Message ?? args.Exception.Message;
+                MessageBox.Show(
+                    $"Ошибка при выполнении операции:\n{message}",
+                    "Ошибка приложения",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            };
+
+            // Создаём и настраиваем контейнер
             var container = ContainerConfig.Configure();
 
             // Получаем главную форму из контейнера со всеми готовыми зависимостями
